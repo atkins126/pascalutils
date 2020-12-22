@@ -1,7 +1,7 @@
 PascalUtils
 ==========
 
-PascalUtils is object pascal library of utils data structures.
+PascalUtils is delphi and object pascal library of utils data structures.
 
 
 ### Table of contents
@@ -35,15 +35,19 @@ PascalUtils is object pascal library of utils data structures.
     * [Examples](#examples-4)
       * [Create](#create-4)
       * [Set value](#set-value-1)
-      * [Get value](#get-value-1)
+      * [Get value](#get-value-3)
       * [Convert](#convert-1)
   * [TPair](#tpair)
     * [Examples](#examples-5)
       * [Create](#create-5)
-      * [Get value](#get-value-2)
-  * [TArrayErrorsStack, TListErrorsStack](#tarrayerrorsstack-tlisterrorsstack)
+      * [Get value](#get-value-4)
+  * [TTuple](#ttuple)
     * [Examples](#examples-6)
       * [Create](#create-6)
+      * [Get value](#get-value-5)
+  * [TArrayErrorsStack, TListErrorsStack](#tarrayerrorsstack-tlisterrorsstack)
+    * [Examples](#examples-7)
+      * [Create](#create-7)
       * [Push](#push)
       * [Pop](#pop)
       * [Iterate](#iterate)
@@ -53,16 +57,24 @@ PascalUtils is object pascal library of utils data structures.
 
 ### Requirements
 
+* [Embarcadero (R) Rad Studio](https://www.embarcadero.com)
 * [Free Pascal Compiler](http://freepascal.org)
 * [Lazarus IDE](http://www.lazarus.freepascal.org/) (optional)
 
-Library is tested with latest stable FreePascal Compiler (currently 3.2.0) and Lazarus IDE (currently 2.0.10).
+
+
+Library is tested for 
+
+- Embarcadero (R) Delphi 10.3 on Windows 7 Service Pack 1 (Version 6.1, Build 7601, 64-bit Edition)
+- FreePascal Compiler (3.2.0) and Lazarus IDE (2.0.10) on Ubuntu Linux 5.8.0-33-generic x86_64
 
 
 
 ### Installation
 
-Get the sources and add the *source* directory to the *fpc.cfg* file.
+
+Get the sources and add the *source* directory to the project search path. 
+For FPC add the *source* directory to the *fpc.cfg* file.
 
 
 
@@ -97,7 +109,7 @@ uses
   utils.optional;
 
 type
-  TIntegerOptional = specialize TOptional<Integer>;
+  TIntegerOptional = {$IFDEF FPC}type specialize{$ENDIF} TOptional<Integer>;
 
 var
   opt_int : TIntegerOptional;
@@ -154,7 +166,7 @@ uses
   utils.result;
 
 type
-  TIntStrResult = specialize TResult<Integer, String>;
+  TIntStrResult = {$IFDEF FPC}type specialize{$ENDIF} TResult<Integer, String>;
 
 var
   res : TIntStrResult;
@@ -214,7 +226,7 @@ uses
   utils.functor;
 
 type
-  TMoreIntegerFunctor = class(specialize TBinaryFunctor<Integer, Boolean>)
+  TMoreIntegerFunctor = class({$IFDEF FPC}specialize{$ENDIF} TBinaryFunctor<Integer, Boolean>)
   public
     function Call(AValue1, AValue2 : Integer) : Boolean; override;
   end;
@@ -470,7 +482,7 @@ uses
   utils.pair;
 
 type
-  TIntIntPair = specialize TPair<Integer, Integer>;
+  TIntIntPair = {$IFDEF FPC}type specialize{$ENDIF} TPair<Integer, Integer>;
 
 var
   pair : TIntIntPair;
@@ -498,6 +510,60 @@ end;
 
 
 
+#### TTuple
+
+```pascal
+
+uses
+  utils.tuple;
+
+type
+  generic TTuple3<T1, T2, T3> = class
+  generic TTuple4<T1, T2, T3, T4> = class
+  generic TTuple5<T1, T2, T3, T4, T5> = class
+```
+[TTuple](https://github.com/isemenkov/pascalutils/blob/master/source/utils.tuple.pas) class contains tuple of values like in C++ language.
+
+##### Examples
+
+###### Create
+
+```pascal
+uses
+  utils.tuple;
+
+type
+  TIntTuple = {$IFDEF FPC}type specialize{$ENDIF} TTuple3<Integer, Integer, Integer>;
+
+var
+  tuple : TIntTuple;
+
+begin
+  { Create tuple with default values. }
+  tuple := TIntTuple.Create;
+
+  { Create tuple. }
+  tuple := TIntTuple.Create(2, -4, 4);
+
+  FreeAndNil(tuple);
+end;
+```
+
+###### Get value
+
+```pascal
+  { Get first value. }
+  writeln(tuple.First);
+
+  { Get second value. }
+  writeln(tuple.Second);
+
+  { Get third value. }
+  writeln(tuple.Third);
+```
+
+
+
 #### TArrayErrorsStack, TListErrorsStack
 
 ```pascal
@@ -520,7 +586,7 @@ uses
   utils.errorsstack;
 
 type
-  TStringErrorsStack = specialize TArrayErrorsStack<String>;
+  TStringErrorsStack = {$IFDEF FPC}type specialize{$ENDIF} TArrayErrorsStack<String>;
 
 var
   errors : TStringErrorsStack;
