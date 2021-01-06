@@ -2,7 +2,7 @@
 (*                                PascalUtils                                 *)
 (*          delphi and object pascal library of utils data structures         *)
 (*                                                                            *)
-(* Copyright (c) 2020                                       Ivan Semenkov     *)
+(* Copyright (c) 2021                                       Ivan Semenkov     *)
 (* https://github.com/isemenkov/pascalutils                 ivan@semenkov.pro *)
 (*                                                          Ukraine           *)
 (******************************************************************************)
@@ -23,7 +23,7 @@
 (*                                                                            *)
 (******************************************************************************)
 
-unit utils.optional;
+unit utils.api.cstring;
 
 {$IFDEF FPC}
   {$mode objfpc}{$H+}
@@ -34,77 +34,65 @@ unit utils.optional;
 
 interface
 
-uses    
-  SysUtils;
+uses
+  SysUtils {$IFNDEF FPC}, System.AnsiStrings{$ENDIF};
 
 type
-  { None value exception }
-  TNoneValueException = class(Exception); 
-
-  { Optional class type which can contains some value or none, like Rust lang }
-  {$IFDEF FPC}generic{$ENDIF} TOptional<T> = class
+  API = class
   public
-    { Create new Optional with None type }
-    constructor Create; overload;
-
-    { Create new Optional with Some type }
-    constructor Create (AValue : T); overload;
-
-    { Return true if optional contains value }
-    function IsSome : Boolean;
-      {$IFNDEF DEBUG}inline;{$ENDIF}
-
-    { Return true if optional contains none }
-    function IsNone : Boolean;
-      {$IFNDEF DEBUG}inline;{$ENDIF}
-
-    { Return stored value or raise TNoneValueException exeption if none }
-    function Unwrap : T;
-      {$IFNDEF DEBUG}inline;{$ENDIF}
-  protected
     type
-      TValue = record
-        Ok : Boolean;
-        Value : T;
+      CString = class
+      public
+        constructor Create; overload;
+        constructor Create (AString : String); overload;
+        constructor Create (AString : PAnsiChar); overload;
+
+        function ToString : String;
+        function ToPAnsiChar : PAnsiChar;
+        function ToUniquePAnsiChar : PAnsiChar;
+        function Length : Integer; 
+      protected
+        FString : String; 
       end;
-  protected
-    FValue : TValue;
   end;
 
 implementation
 
-{ TOptional generic }
+{ API.CString }
 
-constructor TOptional{$IFNDEF FPC}<T>{$ENDIF}.Create;
+constructor API.CString.Create;
 begin
-  FValue.Ok := False;
+  FString := '';
 end;
 
-constructor TOptional{$IFNDEF FPC}<T>{$ENDIF}.Create (AValue : T);
+constructor API.CString.Create (AString : String);
 begin
-  FValue.Ok := True;
-  FValue.Value := AValue;
+  FString := AString;
 end;
 
-function TOptional{$IFNDEF FPC}<T>{$ENDIF}.IsSome : Boolean;
+constructor API.CString.Create (AString : PAnsiChar);
 begin
-  Result := FValue.Ok;
+  FString := String(Utf8ToString(AString));
 end;
 
-function TOptional{$IFNDEF FPC}<T>{$ENDIF}.IsNone : Boolean;
+function API.CString.toString : String;
 begin
-  Result := not FValue.Ok;
+  Result := FString;
 end;
 
-function TOptional{$IFNDEF FPC}<T>{$ENDIF}.Unwrap : T;
+function API.CString.ToPAnsiChar : PAnsiChar;
 begin
-  if IsSome then
-  begin
-    Result := FValue.Value;
-  end else 
-  begin
-    raise TNoneValueException.Create('Value not exists');
-  end;
+  Result := PAnsiChar({$IFNDEF FPC}Utf8Encode{$ENDIF}(FString));
+end;
+
+function API.CString.ToUniquePAnsiChar : PAnsiChar;
+begin
+  Result := {$IFNDEF FPC}System.AnsiStrings.{$ENDIF}StrNew(ToPAnsiChar);
+end;
+
+function API.CString.Length : Integer;
+begin
+  Result := System.Length(FString);
 end;
 
 end.

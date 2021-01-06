@@ -1,6 +1,6 @@
 (******************************************************************************)
 (*                                PascalUtils                                 *)
-(*              object pascal library of utils data structures                *)
+(*          delphi and object pascal library of utils data structures         *)
 (*                                                                            *)
 (* Copyright (c) 2020                                       Ivan Semenkov     *)
 (* https://github.com/isemenkov/pascalutils                 ivan@semenkov.pro *)
@@ -130,14 +130,12 @@ begin
   FValue.Ok := True;
   New(FValue.Value);
   FValue.Value^ := AValue;
-  FValue.Error := nil;
 end;
 
 constructor TResult{$IFNDEF FPC}<V, E>{$ENDIF}.CreateError (AError : E);
 begin
   FValue.Ok := False;
   New(FValue.Error);
-  FValue.Value := nil;
   FValue.Error^ := AError;
 end;
 
