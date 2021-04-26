@@ -2,7 +2,7 @@
 (*                                PascalUtils                                 *)
 (*          delphi and object pascal library of utils data structures         *)
 (*                                                                            *)
-(* Copyright (c) 2020                                       Ivan Semenkov     *)
+(* Copyright (c) 2020 - 2021                                Ivan Semenkov     *)
 (* https://github.com/isemenkov/pascalutils                 ivan@semenkov.pro *)
 (*                                                          Ukraine           *)
 (******************************************************************************)
@@ -35,7 +35,7 @@ unit utils.errorsstack;
 interface
 
 uses
-  SysUtils {$IFDEF USE_OPTIONAL}, utils.optional{$ENDIF};
+  SysUtils {$IFDEF USE_OPTIONAL}, utils.optional{$ENDIF}, utils.enumerate;
 
 type
   {$IFNDEF USE_OPTIONAL}
@@ -51,30 +51,56 @@ type
       {$IFDEF USE_OPTIONAL}
       TOptionalError = {$IFDEF FPC}specialize{$ENDIF} TOptional<T>;
       {$ENDIF}
+  protected
+    type
+      { Internal container storage data type. }
+      PData = ^TData;
+      TData = record
+        Value : T;
+      end;
 
+      TErrorsDynArray = array of PData;
       PErrorsDynArray = ^TErrorsDynArray;
-      TErrorsDynArray = array of T;
-
-      { TArrayErrorsStack enumerator } 
-      TErrorsEnumerator = class
+  public
+    type
+      { TArrayErrorsStack iterator. }
+      TIterator = class; { Fix for FreePascal compiler. }
+      TIterator = class({$IFDEF FPC}specialize{$ENDIF} 
+        TForwardIterator<T, TIterator>)
       protected
-        { Return enumerator for in operator }
-        function GetEnumerator : TErrorsEnumerator;
-
-        { Get error }
-        function GetCurrent : {$IFNDEF USE_OPTIONAL}T{$ELSE}TOptionalError
-          {$ENDIF};
+        { Create new iterator for item entry. }
+        {%H-}constructor Create (Arr : PErrorsDynArray; Len : Cardinal; Pos : 
+          Integer);
       public
-        constructor Create (Arr : PErrorsDynArray; Len : Cardinal);
+        { Return true if iterator has correct value }
+        function HasValue : Boolean; override;
 
-        { Return True if can move to next item }
-        function MoveNext : Boolean;
+        { Retrieve the next entry. }
+        function Next : TIterator; override;
 
-        { Return current item and move pointer to next item. }
+        { Return True if we can move to next element. }
+        function MoveNext : Boolean; override;
+
+        { Return enumerator for in operator. }
+        function GetEnumerator : TIterator; override;
+      protected
+        { Get item value. }
+        function GetValue : {$IFNDEF USE_OPTIONAL}T{$ELSE}TOptionalError
+          {$ENDIF}; override;
+
+        { Return current item iterator and move it to next. }
+        function GetCurrent : {$IFNDEF USE_OPTIONAL}T{$ELSE}TOptionalError
+          {$ENDIF}; override;
+      public
+        { Pop TArrayErrorsStack item value. If value not exists raise 
+          EErrorNotExists. }
+        property Value : {$IFNDEF USE_OPTIONAL}T{$ELSE}TOptionalError{$ENDIF} 
+          read GetValue;
+
         property Current : {$IFNDEF USE_OPTIONAL}T{$ELSE}TOptionalError{$ENDIF}
           read GetCurrent;
       protected
-        FErrors : PErrorsDynArray;
+        FArray : PErrorsDynArray;
         FLength : LongInt;
         FPosition : LongInt;
       end;
@@ -92,13 +118,16 @@ type
     { Stack count elements }
     function Count : LongInt;
 
+    { Retrive the first entry in a TArrayErrorsStack. }
+    function FirstEntry : TIterator;
+
     { Return enumerator for in operator. }
-    function GetEnumerator : TErrorsEnumerator;
+    function GetEnumerator : TIterator;
   protected
     { Reallocate the array to the new size }
     function Enlarge : Boolean;
   protected
-    FData : array of T;
+    FData : array of PData;
     FLength : LongInt;
     FAlloced : LongInt;
   end;
@@ -106,9 +135,15 @@ type
   { TListErrorsStack is generic stack over list of T which contains errors 
     codes. }
   {$IFDEF FPC}generic{$ENDIF} TListErrorsStack<T> = class
+  public
+    type
+      {$IFDEF USE_OPTIONAL}
+      TOptionalError = {$IFDEF FPC}specialize{$ENDIF} TOptional<T>;
+      {$ENDIF}
   protected
     type
       { Item enty type }
+      PPListEntry = ^PListEntry;
       PListEntry = ^TListEntry;
       TListEntry = record
         Value : T;
@@ -116,30 +151,67 @@ type
       end;
   public
     type
-      {$IFDEF USE_OPTIONAL}
-      TOptionalError = {$IFDEF FPC}specialize{$ENDIF} TOptional<T>;
-      {$ENDIF}
-
-      { TListErrorsStack enumerator }  
-      TErrorsEnumerator = class
+      { TListErrorsStack iterator. }
+      TIterator = class; { Fix for FreePascal compiler. }
+      TIterator = class({$IFDEF FPC}specialize{$ENDIF} 
+        TForwardIterator<T, TIterator>)
       protected
-        { Return enumerator for in operator }
-        function GetEnumerator : TErrorsEnumerator;
-
-        { Get error }
-        function GetCurrent : {$IFNDEF USE_OPTIONAL}T{$ELSE}TOptionalError
-          {$ENDIF};
+        { Create new iterator for list errors stack item entry. }
+        {%H-}constructor Create (APFirstNode : PPListEntry; APLength : 
+          PLongWord; AItem : PListEntry);
       public
-        constructor Create (FirstEntry : PListEntry);
+        { Return true if iterator has correct value }
+        function HasValue : Boolean; override;
 
-        { Return True if can move to next item }
-        function MoveNext : Boolean;
+        { Retrieve the next entry in a list. }
+        function Next : TIterator; override;
 
-        { Return current item and move pointer to next item. }
+        { Return True if we can move to next element. }
+        function MoveNext : Boolean; override;
+
+        { Return enumerator for in operator. }
+        function GetEnumerator : TIterator; override;
+      protected
+        { Get item value. }
+        function GetValue : {$IFNDEF USE_OPTIONAL}T{$ELSE}TOptionalError
+          {$ENDIF}; override;
+
+        { Return current item iterator and move it to next. }
+        function GetCurrent : {$IFNDEF USE_OPTIONAL}T{$ELSE}TOptionalError
+          {$ENDIF}; override;
+      protected
+        var
+          { We cann't store pointer to list because generics in pascal it is
+            not "real" class see: https://wiki.freepascal.org/Generics 
+            
+            Other Points
+            ============
+            1. The compiler parses a generic, but instead of generating code it 
+            stores all tokens in a token buffer inside the PPU file.
+            2. The compiler parses a specialization; for this it loads the token 
+            buffer from the PPU file and parses that again. It replaces the 
+            generic parameters (in most examples "T") by the particular given 
+            type (e.g. LongInt, TObject).
+              The code basically appears as if the same class had been written 
+            as the generic but with T replaced by the given type. 
+              Therefore in theory there should be no speed differences between a
+            "normal" class and a generic one.  
+
+            In this reason we cann't take pointer to list class inside TIterator
+            class. But in some methods we need modify original list data, so we
+            store pointers to list data. }
+          FPFirstNode : PPListEntry;
+          FPLength : PLongWord;
+
+          FItem : PListEntry;
+      public
+        { Read list errors stack item value. If value not exists raise 
+          EErrorNotExists. }
+        property Value : {$IFNDEF USE_OPTIONAL}T{$ELSE}TOptionalError{$ENDIF} 
+          read GetValue;
+
         property Current : {$IFNDEF USE_OPTIONAL}T{$ELSE}TOptionalError{$ENDIF}
           read GetCurrent;
-      protected
-        FNode : PListEntry;
       end;
   public
     constructor Create;
@@ -155,8 +227,11 @@ type
     { Stack count elements }
     function Count : LongInt;
 
+    { Retrive the first entry in a TListErrorsStack. }
+    function FirstEntry : TIterator;
+
     { Return enumerator for in operator. }
-    function GetEnumerator : TErrorsEnumerator;
+    function GetEnumerator : TIterator;
   protected
     FFirstNode : PListEntry;
     FLength : LongInt;
@@ -164,43 +239,65 @@ type
 
 implementation
 
-{ TArrayErrorsStack.TErrorsEnumerator }
+{ TArrayErrorsStack.TIterator }
 
-constructor TArrayErrorsStack{$IFNDEF FPC}<T>{$ENDIF}.TErrorsEnumerator.Create 
-  (Arr : PErrorsDynArray; Len : Cardinal);
+constructor TArrayErrorsStack{$IFNDEF FPC}<T>{$ENDIF}.TIterator.Create
+  (Arr : PErrorsDynArray; Len : Cardinal; Pos : Integer);
 begin
-  FErrors := Arr;
+  FArray := Arr;
   FLength := Len;
-  FPosition := 0;
+  FPosition := Pos;
 end;
 
-function TArrayErrorsStack{$IFNDEF FPC}<T>{$ENDIF}
-  .TErrorsEnumerator.GetEnumerator : TErrorsEnumerator;
+function TArrayErrorsStack{$IFNDEF FPC}<T>{$ENDIF}.TIterator.HasValue : 
+  Boolean;
 begin
-  Result := Self;
+  if FPosition >= FLength  then
+  begin
+    Exit(False);
+  end;  
+
+  Result := True;
 end;
 
-function TArrayErrorsStack{$IFNDEF FPC}<T>{$ENDIF}
-  .TErrorsEnumerator.GetCurrent : 
+function TArrayErrorsStack{$IFNDEF FPC}<T>{$ENDIF}.TIterator.Next : TIterator;
+begin
+  Result := TIterator.Create(FArray, FLength, FPosition + 1);
+end;
+
+function TArrayErrorsStack{$IFNDEF FPC}<T>{$ENDIF}.TIterator.MoveNext : 
+  Boolean;
+begin
+  Result := FPosition < FLength;
+end;
+
+function TArrayErrorsStack{$IFNDEF FPC}<T>{$ENDIF}.TIterator.GetEnumerator :
+  TIterator;
+begin
+  Result := TIterator.Create(FArray, FLength, FPosition);
+end;
+
+function TArrayErrorsStack{$IFNDEF FPC}<T>{$ENDIF}.TIterator.GetValue :
   {$IFNDEF USE_OPTIONAL}T{$ELSE}TOptionalError{$ENDIF};
 begin
   if FPosition > FLength then
   begin
     {$IFNDEF USE_OPTIONAL}
-    raise EErrorNotExists.Create('Errors not exists.');
+    raise EErrorNotExists.Create('Error value not exists.');
     {$ELSE}
     Exit(TOptionalError.Create);
     {$ENDIF}
   end;
 
-  Result := FErrors^[FPosition];
-  Inc(FPosition);
+  Result := {$IFDEF USE_OPTIONAL}TOptionalError.Create({$ENDIF}
+    FArray^[FPosition]^.Value{$IFDEF USE_OPTIONAL}){$ENDIF};
 end;
 
-function TArrayErrorsStack{$IFNDEF FPC}<T>{$ENDIF}.TErrorsEnumerator.MoveNext : 
-  Boolean;
+function TArrayErrorsStack{$IFNDEF FPC}<T>{$ENDIF}.TIterator.GetCurrent :
+  {$IFNDEF USE_OPTIONAL}T{$ELSE}TOptionalError{$ENDIF};
 begin
-  Result := FPosition < FLength;
+  Result := GetValue;
+  Inc(FPosition);
 end;
 
 { TArrayErrorsStack }
@@ -242,7 +339,7 @@ begin
     end;
   end;
 
-  FData[FLength] := AError;
+  FData[FLength]^.Value := AError;
   Inc(FLength);
 end;
 
@@ -258,7 +355,7 @@ begin
     {$ENDIF}
   end;
 
-  Result := FData[FLength];
+  Result := FData[FLength]^.Value;
   Dec(FLength);
 end;
 
@@ -267,46 +364,76 @@ begin
   Result := FLength;
 end;
 
+function TArrayErrorsStack{$IFNDEF FPC}<T>{$ENDIF}.FirstEntry : TIterator;
+begin
+  Result := TIterator.Create(@FData, FLength, 0);
+end;
+
 function TArrayErrorsStack{$IFNDEF FPC}<T>{$ENDIF}.GetEnumerator : 
-  TErrorsEnumerator;
+  TIterator;
 begin
-  Result := TErrorsEnumerator.Create(@FData, FLength);
+  Result := TIterator.Create(@FData, FLength, 0);
 end;
 
-{ TListErrorsStack.TErrorsEnumerator }
+{ TListErrorsStack.TIterator }
 
-constructor TListErrorsStack{$IFNDEF FPC}<T>{$ENDIF}.TErrorsEnumerator.Create 
-  (FirstEntry : PListEntry);
+constructor TListErrorsStack{$IFNDEF FPC}<T>{$ENDIF}.TIterator.Create
+  (APFirstNode : PPListEntry; APlength : PLongWord; AItem : PListEntry);
 begin
-  FNode := FirstEntry;
+  FPFirstNode := APFirstNode;
+  FPLength := APLength;
+  FItem := AItem;
 end;
 
-function TListErrorsStack{$IFNDEF FPC}<T>{$ENDIF}
-  .TErrorsEnumerator.GetEnumerator : TErrorsEnumerator;
+function TListErrorsStack{$IFNDEF FPC}<T>{$ENDIF}.TIterator.HasValue :
+  Boolean;
 begin
-  Result := Self;
+  Result := FItem <> nil;
 end;
 
-function TListErrorsStack{$IFNDEF FPC}<T>{$ENDIF}.TErrorsEnumerator.GetCurrent : 
+function TListErrorsStack{$IFNDEF FPC}<T>{$ENDIF}.TIterator.Next : TIterator;
+begin
+  if FItem = nil then
+  begin  
+    Result := TIterator.Create(FPFirstNode, FPLength, nil);
+    Exit;
+  end;
+
+  Result := TIterator.Create(FPFirstNode, FPLength, FItem^.Next);
+end;
+
+function TListErrorsStack{$IFNDEF FPC}<T>{$ENDIF}.TIterator.MoveNext : Boolean;
+begin
+  Result := FItem <> nil;
+end;
+
+function TListErrorsStack{$IFNDEF FPC}<T>{$ENDIF}.TIterator.GetEnumerator :
+  TIterator;
+begin
+  Result := TIterator.Create(FPFirstNode, FPLength, FItem);
+end;
+
+function TListErrorsStack{$IFNDEF FPC}<T>{$ENDIF}.TIterator.GetValue :
   {$IFNDEF USE_OPTIONAL}T{$ELSE}TOptionalError{$ENDIF};
 begin
-  if FNode = nil then
+  if FItem = nil then
   begin
     {$IFNDEF USE_OPTIONAL}
-    raise EErrorNotExists.Create('Errors not exists.');
+    raise EErrorNotExists.Create('Error not exists.');
     {$ELSE}
     Exit(TOptionalError.Create);
     {$ENDIF}
   end;
 
-  Result := FNode^.Value;
-  FNode := FNode^.Next;
+  Result := {$IFDEF USE_OPTIONAL}TOptionalError.Create({$ENDIF}FItem^.Value
+    {$IFDEF USE_OPTIONAL}){$ENDIF};
 end;
 
-function TListErrorsStack{$IFNDEF FPC}<T>{$ENDIF}.TErrorsEnumerator.MoveNext : 
-  Boolean;
+function TListErrorsStack{$IFNDEF FPC}<T>{$ENDIF}.TIterator.GetCurrent :
+  {$IFNDEF USE_OPTIONAL}T{$ELSE}TOptionalError{$ENDIF};
 begin
-  Result := FNode <> nil;
+  Result := GetValue;
+  FItem := FItem^.Next;
 end;
 
 { TListErrorsStack }
@@ -366,10 +493,16 @@ begin
   Result := FLength;
 end;
 
-function TListErrorsStack{$IFNDEF FPC}<T>{$ENDIF}.GetEnumerator : 
-  TErrorsEnumerator;
+function TListErrorsStack{$IFNDEF FPC}<T>{$ENDIF}.FirstEntry : 
+  TIterator;
 begin
-  Result := TErrorsEnumerator.Create(FFirstNode);
+  Result := TIterator.Create(@FFirstNode, @FLength, FFirstNode);
+end;
+
+function TListErrorsStack{$IFNDEF FPC}<T>{$ENDIF}.GetEnumerator : 
+  TIterator;
+begin
+  Result := FirstEntry;
 end;
 
 end.

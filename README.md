@@ -11,56 +11,32 @@ PascalUtils is an object library for delphi and FreePascal of data structures th
 * [Usage](#usage)
 * [Data structures](#data-structures)
   * [TOptional](#toptional)
-    * [Examples](#examples)
-      * [Create](#create)
-      * [Check state](#check-state)
-      * [Get value](#get-value)
   * [TResult](#tresult)
-    * [Examples](#examples-1)
-      * [Create](#create-1)
-      * [Check state](#check-state-1)
-      * [Get value](#get-value-1)
+  * [TVoidResult](#tvoidresult)
   * [TDataSize](#tdatasize)
-    * [Examples](#examples-2)
-      * [Create](#create-2)
-      * [Set value](#set-value)
-      * [Get value](#get-value-2)
-      * [Convert](#convert)
   * [TTimeInterval](#ttime-interval)
-    * [Examples](#examples-3)
-      * [Create](#create-3)
-      * [Set value](#set-value-1)
-      * [Get value](#get-value-3)
-      * [Convert](#convert-1)
   * [TPair](#tpair)
-    * [Examples](#examples-4)
-      * [Create](#create-4)
-      * [Get value](#get-value-4)
   * [TTuple](#ttuple)
-    * [Examples](#examples-5)
-      * [Create](#create-5)
-      * [Get value](#get-value-5)
+  * [TVariant](#tvariant)
+  * [TUnaryFunctor](#tunaryfunctor) 
+  * [TBinaryFunctor](#tbinaryfunctor)
+    * [TUnsortableFunctor](#tunsortablefunctor)
+    * [TDefaultCompareFunctor](#tdefaultcomparefunctor)
+    * [TDefaultLessFunctor](#tdefaultlessfunctor)
+    * [TDefaultGreaterFunctor](#tdefaultgreaterfunctor)
+    * [TDefaultEqualFunctor](#tdefaultequalfunctor)
+    * [TDefaultPairKeyCompareFunctor](#tdefaultpairkeycomparefunctor)
+  * [API.CString](#apicstring)
 * [Errors processing](#errors-processing)
-  * [TArrayErrorsStack, TListErrorsStack](#tarrayerrorsstack-tlisterrorsstack)
-    * [Examples](#examples-6)
-      * [Create](#create-6)
-      * [Push](#push)
-      * [Pop](#pop)
-      * [Iterate](#iterate)
+  * [TArrayErrorsStack](#tarrayerrorsstack)
+  * [TListErrorsStack](#tlisterrorsstack)
 * [Iterators](#iterators)
-  * [TUnaryFunctor, TBinaryFunctor](#tunaryfunctor-tbinaryfunctor)
-    * [Examples](#examples-7)
-      * [Specialize](#specialize)
-      * [Create](#create-7)
-      * [Run](#run)
-  * [TForwardIterator, TBidirectionalIterator](#tforwarditerator-tbidirectionaliterator)
-    * [Examples](#examples-8)
-  * [TEnumerator, TFilterEnumerator](#tenumerator-tfilterenumerator)
-    * [Examples](#examples-9)
+  * [TForwardIterator](#tforwarditerator) 
+  * [TBidirectionalIterator](#tbidirectionaliterator)
+  * [TEnumerator](#tenumerator)
+  * [TFilterEnumerator](#tfilterenumerator)
   * [TAccumulate](#taccumulate)
-    * [Examples](#examples-10)
   * [TMap](#tmap)
-    * [Examples](#examples-11)
 
 
 
@@ -108,49 +84,11 @@ type
   generic TOptional<T> = class
 ```
 
+  * [Create](https://github.com/isemenkov/pascalutils/wiki/TOptional#create)
+  * [IsSome](https://github.com/isemenkov/pascalutils/wiki/TOptional#issome)
+  * [Unwrap](https://github.com/isemenkov/pascalutils/wiki/TOptional#unwrap)
 
-
-##### Examples
-
-###### Create
-
-```pascal
-uses
-  utils.optional;
-
-type
-  TIntegerOptional = {$IFDEF FPC}type specialize{$ENDIF} TOptional<Integer>;
-
-var
-  opt_int : TIntegerOptional;
-
-begin
-  { Create none value. }
-  opt_int := TIntegerOptional.Create;
-
-  { Create integer value. }
-  opt_int := TIntegerOptional.Create(4);
-
-  FreeAndNil(opt_int);
-end;
-```
-
-###### Check state
-
-```pascal
-  { Check if value is present. }
-  if opt_int.IsSome then
-
-  { Check if is value isn't. }
-  if opt_int.IsNone then
-```
-
-###### Get value
-
-```pascal
-  { Get stored value. }
-  writeln(opt_int.Unwrap());
-```
+*More details read on* [wiki page](https://github.com/isemenkov/pascalutils/wiki/TOptional).
 
 
 
@@ -164,117 +102,36 @@ uses
   
 type
   generic TResult<V, E> = class
-  generic TVoidResult<E> = class
 ```
 
+  * [Create](https://github.com/isemenkov/pascalutils/wiki/TResult#create)
+  * [IsOk](https://github.com/isemenkov/pascalutils/wiki/TResult#isok)
+  * [IsErr](https://github.com/isemenkov/pascalutils/wiki/TResult#iserr)
+  * [Value](https://github.com/isemenkov/pascalutils/wiki/TResult#value)
+  * [Error](https://github.com/isemenkov/pascalutils/wiki/TResult#error)
+
+*More details read on* [wiki page](https://github.com/isemenkov/pascalutils/wiki/TResult).
 
 
-##### Examples
 
-###### Create
+#### TVoidResult
+
+TVoidResult contains Ok flag or error type like in GO or Rust languages. It is a specialized TResult type with no value.
 
 ```pascal
 uses
   utils.result;
-
-type
-  TIntStrResult = {$IFDEF FPC}type specialize{$ENDIF} TResult<Integer, String>;
-
-var
-  res : TIntStrResult;
-
-begin
-  { Create new value. }
-  res := TIntStrResult.CreateValue(-2);
-
-  { Create new error string. }
-  res := TIntStrResult.CreateError("Something wrong!");
-
-  FreeAndNil(res);
-end;
-```
-
-###### Check state
-
-```pascal
-  { Check if value is present. }
-  if res.IsOk then
-
-  { Check if error is present. }
-  if res.IsErr then
-```
-
-###### Get value
-
-```pascal
-  { Get stored value. }
-  writeln(res.Value);
-
-  { Get stored error. }
-  writeln(res.Error);
-```
-
-
-
-#### TUnaryFunctor, TBinaryFunctor
-
-Functors are objects that can be treated as though they are a functions. This objects to be used with the syntax like a regular function call, and therefore its type can be used as template parameter when a generic function type is expected.
-
-```pascal
-uses
-  utils.functor;
   
 type
-  generic TUnaryFunctor<V, R> = class
-  generic TBinaryFunctor<V, R> = class
+  generic TVoidResult<E> = class
 ```
 
-[TUnaryFunctor](https://github.com/isemenkov/pascalutils/blob/master/source/utils.functor.pas) class and [TBinaryFunctor](https://github.com/isemenkov/pascalutils/blob/master/source/utils.functor.pas) provides functor structure, like in C++ language.
+  * [Create](https://github.com/isemenkov/pascalutils/wiki/TVoidResult#create)
+  * [IsOk](https://github.com/isemenkov/pascalutils/wiki/TVoidResult#isok)
+  * [IsErr](https://github.com/isemenkov/pascalutils/wiki/TVoidResult#iserr)
+  * [Error](https://github.com/isemenkov/pascalutils/wiki/TVoidResult#error)
 
-
-
-##### Examples
-
-###### Specialize
-
-```pascal
-uses
-  utils.functor;
-
-type
-  TMoreIntegerFunctor = class({$IFDEF FPC}specialize{$ENDIF} TBinaryFunctor<Integer, Boolean>)
-  public
-    function Call(AValue1, AValue2 : Integer) : Boolean; override;
-  end;
-
-  function TMoreIntegerFunctor.Call (AValue1, AValue2 : Integer) : Boolean;
-  begin
-    if AValue1 > AValue2 then
-      Result := True
-    else
-      Result := False;
-  end;
-```
-
-###### Create
-
-```pascal
-var
-  int_func : TMoreIntegerFunctor;
-
-begin
-  int_func := TMoreIntegerFunctor.Create;
-
-  FreeAndNil(int_func);
-end;
-```
-
-###### Run
-
-```pascal
-  { Run a functor. }
-  if int_func(3, -5) then
-```
+*More details read on* [wiki page](https://github.com/isemenkov/pascalutils/wiki/TVoidResult).
 
 
 
@@ -290,93 +147,11 @@ type
   TDataSize = class
 ```
 
+  * [Create](https://github.com/isemenkov/pascalutils/wiki/TDataSize#create)
+  * [Values](https://github.com/isemenkov/pascalutils/wiki/TDataSize#values)
+  * [Convert](https://github.com/isemenkov/pascalutils/wiki/TDataSize#convert)
 
-
-##### Examples
-
-###### Create
-
-```pascal
-uses
-  utils.datasize;
-
-var
-  size : TDataSize;
-
-begin
-  size := TDataSize.Create;
-
-  FreeAndNil(size);
-end;
-```
-
-###### Set value
-
-```pascal
-  { Set bytes. }
-  size.Bytes := 1024;
-  size.b := 512;
-
-  { Set kilobytes. }
-  size.Kilobytes := 32;
-  size.KiB := 16;
-
-  { Set megabytes. }
-  size.Megabytes := 1;
-  size.MiB := 5;
-
-  { Set gigabytes. }
-  size.Gigabytes := 7;
-  size.GiB := 3;
-
-  { Set terabytes. }
-  size.Terabytes := 0;
-  size.TiB := 120;
-```
-
-###### Get value
-
-```pascal
-  { Get bytes. }
-  writeln(size.bytes);
-  writeln(size.b);
-
-  { Get kilobytes. }
-  writeln(size.Kilobytes);
-  writeln(size.KiB);
-
-  { Get Megabytes. }
-  writeln(size.Megabytes);
-  writeln(size.MiB);
-
-  { Get gigabytes. }
-  writeln(size.Gigabytes);
-  writeln(size.GiB);
-
-  { Get Terabytes. }
-  writeln(size.Terabytes);
-  writeln(size.TiB);
-
-```
-
-###### Convert
-
-```pascal
-  { Convert to bytes. }
-  writeln(size.ToBytes);
-
-  { Convert to kilobytes. }
-  writeln(size.ToKilobytes);
-
-  { Convert to Megabytes. }
-  writeln(size.ToMegabytes);
-
-  { Convert to Gigabytes. }
-  writeln(size.ToGigabytes);
-
-  { Convert to Terabytes. }
-  writeln(size.ToTerabytes);
-```
+*More details read on* [wiki page](https://github.com/isemenkov/pascalutils/wiki/TDataSize).
 
 
 
@@ -392,91 +167,11 @@ type
   TTimeInterval = class
 ```
 
+  * [Create](https://github.com/isemenkov/pascalutils/wiki/TTimeInterval#create)
+  * [Values](https://github.com/isemenkov/pascalutils/wiki/TTimeInterval#values)
+  * [Convert](https://github.com/isemenkov/pascalutils/wiki/TTimeInterval#convert)
 
-
-
-##### Examples
-
-###### Create
-
-```pascal
-uses
-  utils.timeinterval;
-
-var
-  interval : TTimeInterval;
-
-begin
-  interval := TTimeInterval.Create;
-end;
-```
-
-###### Set value
-
-```pascal
-  { Set microseconds. }
-  interval.Microseconds := 432;
-  interval.us := 432;
-
-  { Set milliseconds. }
-  interval.Milliseconds := 32;
-  interval.ms := 21;
-
-  { Set seconds. }
-  interval.Seconds := 59;
-  interval.s := 8;
-
-  { Set minutes. }
-  interval.Minutes := 32;
-  interval.m := 52;
-
-  { Set hours. }
-  interval.Hours := 5;
-  interval.h := 4;
-```
-
-###### Get value
-
-```pascal
-  { Get microseconds. }
-  writeln(interval.Microseconds);
-  writeln(interval.us);
-
-  { Get milliseconds. }
-  writeln(interval.Milliseconds);
-  writeln(interval.ms);
-
-  { Get seconds. }
-  writeln(interval.Seconds);
-  writeln(interval.s);
-
-  { Get minutes. }
-  writeln(interval.Minutes);
-  writeln(interval.m);
-
-  { Get hours. }
-  writeln(interval.Hours);
-  writeln(interval.h);
-```
-
-###### Convert
-
-```pascal
-  { Convert to microseconds. }
-  writeln(interval.ToMicroseconds);
-
-  { Convert to milliseconds. }
-  writeln(interval.ToMilliseconds);
-
-  { Convert to seconds. }
-  writeln(interval.ToSeconds);
-
-  { Convert to minutes. }
-  writeln(interval.ToMinutes);
-
-  { Convert to hours. }
-  writeln(interval.ToHours);
-```
+*More details read on* [wiki page](https://github.com/isemenkov/pascalutils/wiki/TTimeInterval).
 
 
 
@@ -493,41 +188,11 @@ type
   generic TPair<T1, T2> = class
 ```
 
+  * [Create](https://github.com/isemenkov/pascalutils/wiki/TPair#create)
+  * [First](https://github.com/isemenkov/pascalutils/wiki/TPair#first)
+  * [Second](https://github.com/isemenkov/pascalutils/wiki/TPair#second)
 
-##### Examples
-
-###### Create
-
-```pascal
-uses
-  utils.pair;
-
-type
-  TIntIntPair = {$IFDEF FPC}type specialize{$ENDIF} TPair<Integer, Integer>;
-
-var
-  pair : TIntIntPair;
-
-begin
-  { Create pair with default values. }
-  pair := TIntIntPair.Create;
-
-  { Create pair. }
-  pair := TIntIntPair.Create(2, -4);
-
-  FreeAndNil(pair);
-end;
-```
-
-###### Get value
-
-```pascal
-  { Get first value. }
-  writeln(pair.First);
-
-  { Get second value. }
-  writeln(pair.Second);
-```
+*More details read on* [wiki page](https://github.com/isemenkov/pascalutils/wiki/TPair).
 
 
 
@@ -544,54 +209,227 @@ type
   generic TTuple3<T1, T2, T3> = class
   generic TTuple4<T1, T2, T3, T4> = class
   generic TTuple5<T1, T2, T3, T4, T5> = class
+  generic TTuple6<T1, T2, T3, T4, T5, T6> = class
+  generic TTuple7<T1, T2, T3, T4, T5, T6, T7> = class
+  generic TTuple8<T1, T2, T3, T4, T5, T6, T7, T8> = class
+  generic TTuple9<T1, T2, T3, T4, T5, T6, T7, T8, T9> = class
+  generic TTuple10<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> = class
 ```
 
+  * [Create](https://github.com/isemenkov/pascalutils/wiki/TTuple#create)
+  * [First](https://github.com/isemenkov/pascalutils/wiki/TTuple#first)
+  * [Second](https://github.com/isemenkov/pascalutils/wiki/TTuple#second)
+  * [Third](https://github.com/isemenkov/pascalutils/wiki/TTuple#third)
+  * [Fourth](https://github.com/isemenkov/pascalutils/wiki/TTuple#fourth)
+  * [Fifth](https://github.com/isemenkov/pascalutils/wiki/TTuple#fifth)
+  * [Sixth](https://github.com/isemenkov/pascalutils/wiki/TTuple#sixth)
+  * [Seventh](https://github.com/isemenkov/pascalutils/wiki/TTuple#sevent)
+  * [Eighth](https://github.com/isemenkov/pascalutils/wiki/TTuple#eighth)
+  * [Ninth](https://github.com/isemenkov/pascalutils/wiki/TTuple#ninth)
+  * [Tenth](https://github.com/isemenkov/pascalutils/wiki/TTuple#tenth)
 
-##### Examples
+*More details read on* [wiki page](https://github.com/isemenkov/pascalutils/wiki/TTuple).
 
-###### Create
+
+
+#### TVariant
+
+[TVariant](https://github.com/isemenkov/pascalutils/blob/master/source/utils.variant.pas) is class template which represents a type-safe union. An instance of TVariant at any given time either holds a value of one of its alternative types.
+
+```pascal
+
+uses
+  utils.variant;
+
+type
+  generic TVariant2<T1, T2> = class
+  generic TVariant3<T1, T2, T3> = class
+  generic TVariant4<T1, T2, T3, T4> = class
+  generic TVariant5<T1, T2, T3, T4, T5> = class
+  generic TVariant6<T1, T2, T3, T4, T5, T6> = class
+  generic TVariant7<T1, T2, T3, T4, T5, T6, T7> = class
+  generic TVariant8<T1, T2, T3, T4, T5, T6, T7, T8> = class
+  generic TVariant9<T1, T2, T3, T4, T5, T6, T7, T8, T9> = class
+  generic TVariant10<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> = class
+```
+
+  * [Create](https://github.com/isemenkov/pascalutils/wiki/TVariant#create)
+  * [GetType](https://github.com/isemenkov/pascalutils/wiki/TVariant#gettype)
+  * [GetValue](https://github.com/isemenkov/pascalutils/wiki/TVariant#getvalue)
+  * [SetValue](https://github.com/isemenkov/pascalutils/wiki/TVariant#setvalue)
+
+*More details read on* [wiki page](https://github.com/isemenkov/pascalutils/wiki/TVariant).
+
+
+
+#### TUnaryFunctor
+
+Functor is instance of a class with member function `Call` defined. This member function allows the object to be used with the  same syntax as a regular function call, and therefore its type can be  used as template parameter when a generic function type is expected.
 
 ```pascal
 uses
-  utils.tuple;
-
+  utils.functor;
+  
 type
-  TIntTuple = {$IFDEF FPC}type specialize{$ENDIF} TTuple3<Integer, Integer, Integer>;
-
-var
-  tuple : TIntTuple;
-
-begin
-  { Create tuple with default values. }
-  tuple := TIntTuple.Create;
-
-  { Create tuple. }
-  tuple := TIntTuple.Create(2, -4, 4);
-
-  FreeAndNil(tuple);
-end;
+  generic TUnaryFunctor<V, R> = class
 ```
 
-###### Get value
+*More details read on* [wiki page](https://github.com/isemenkov/pascalutils/wiki/TUnaryFunctor).
+
+
+
+#### TBinaryFunctor
+
+Functor is instance of a class with member function `Call` defined. This member function allows the object to be used with the  same syntax as a regular function call, and therefore its type can be  used as template parameter when a generic function type is expected.
 
 ```pascal
-  { Get first value. }
-  writeln(tuple.First);
-
-  { Get second value. }
-  writeln(tuple.Second);
-
-  { Get third value. }
-  writeln(tuple.Third);
+uses
+  utils.functor;
+  
+type
+  generic TBinaryFunctor<V, R> = class
 ```
+
+*More details read on* [wiki page](https://github.com/isemenkov/pascalutils/wiki/TBinaryFunctor).
+
+
+
+##### TUnsortablefunctor
+
+It is a special compare functor that return 0 (zero) all times. Real values not used. This functor can be used for [containers](https://github.com/isemenkov/libpasc-algorithms/wiki) for unsortable values.
+
+```pascal
+uses
+  utils.functor;
+
+type  
+  TUnsortableFunctor = 
+    class({$IFDEF FPC}specialize{$ENDIF} TBinaryFunctor<V, Integer>);
+```
+
+*More details read on* [wiki page](https://github.com/isemenkov/pascalutils/wiki/TBinaryFunctor#tunsortablefunctor).
+
+
+
+##### TDefaultCompareFunctor
+
+It is a functor which return a negative value if AValue1 should be sorted before AValue2, a positive value if AValue1 should be sorted after AValue2, zero if AValue1 and AValue2 are equal.
+
+```pascal
+uses
+  utils.functor;
+  
+type
+  generic TDefaultCompareFunctor<V> = 
+    class({$IFDEF FPC}specialize{$ENDIF} TBinaryFunctor<V, Integer>)
+  public
+    function Call(AValue1, AValue2 : V) : Integer;
+  end;
+```
+
+*More details read on* [wiki page](https://github.com/isemenkov/pascalutils/wiki/TBinaryFunctor#tdefaultcomparefunctor).
+
+
+
+##### TDefaultLessFunctor
+
+It is a functor which return True if AValue1 < AValue2.
+
+```pascal
+uses
+  utils.functor;
+  
+type
+  generic TDefaultLessFunctor<V> =
+    class ({$IFDEF FPC}specialize{$ENDIF} TBinaryFunctor<V, Boolean>);
+```
+
+*More details read on* [wiki page](https://github.com/isemenkov/pascalutils/wiki/TBinaryFunctor#tdefaultlessfunctor).
+
+
+
+##### TDefaultGreaterFunctor
+
+It is a functor which return True if AValue1 > AValue2.
+
+```pascal
+uses
+  utils.functor;
+  
+type
+  generic TDefaultGreaterFunctor<V> =
+    class ({$IFDEF FPC}specialize{$ENDIF} TBinaryFunctor<V, Boolean>);
+```
+
+*More details read on* [wiki page](https://github.com/isemenkov/pascalutils/wiki/TBinaryFunctor#tdefaultgreaterfunctor).
+
+
+
+##### TDefaultEqualFunctor
+
+It is a functor which return True if AValue1 = AValue2.
+
+```pascal
+uses
+  utils.functor;
+  
+type
+  generic TDefaultEqualFunctor<V> =
+    class ({$IFDEF FPC}specialize{$ENDIF} TBinaryFunctor<V, Boolean>);
+```
+
+*More details read on* [wiki page](https://github.com/isemenkov/pascalutils/wiki/TBinaryFunctor#tdefaultequalfunctor).
+
+
+
+##### TDefaultPairKeyCompareFunctor
+
+It is a functor which return a negative value if pair 1 key should be sorted before pair 2 key, a positive value if pair 1 key should be sorted after pair 2 key, zero if pair 1 key and pair 2 key are equal.
+
+```pascal
+uses
+  utils.functor, utils.pair;
+  
+uses
+  generic TDefaultPairKeyCompareFunctor<K, V> =
+    class({$IFDEF FPC}specialize{$ENDIF} TBinaryFunctor
+    <{$IFDEF FPC}specialize{$ENDIF} TPair<K, V>, Integer>)
+```
+
+*More details read on* [wiki page](https://github.com/isemenkov/pascalutils/wiki/TBinaryFunctor#tdefaultpairkeycomparefunctor).
+
+
+
+### API.CString
+
+API.CString is a wrapper around C language API cstring `char *` value.
+
+```pascal
+uses
+  utils.api.cstring;
+  
+type
+  API = class
+  type
+    CString = class
+  end;
+```
+
+  * [Create](https://github.com/isemenkov/pascalutils/wiki/API.CString#create)
+  * [ToString](https://github.com/isemenkov/pascalutils/wiki/API.CString#tostring)
+  * [ToPAnsiChar](https://github.com/isemenkov/pascalutils/wiki/API.CString#topansichar)
+  * [ToUniquePAnsiChar](https://github.com/isemenkov/pascalutils/wiki/API.CString#touniquepansichar)
+  * [Length](https://github.com/isemenkov/pascalutils/wiki/API.CString#length)
+
+*More details read on* [wiki page](https://github.com/isemenkov/pascalutils/wiki/API.CString).
 
 
 
 ### Errors processing
 
-#### TArrayErrorsStack, TListErrorsStack
+#### TArrayErrorsStack
 
-[TArrayErrorsStack](https://github.com/isemenkov/pascalutils/blob/master/source/utils.errorsstack.pas) is generic stack over array of T and [TListErrorsStack](https://github.com/isemenkov/pascalutils/blob/master/source/utils.errorsstack.pas) is generic stack over list of T classes which contains errors codes.
+[TArrayErrorsStack](https://github.com/isemenkov/pascalutils/blob/master/source/utils.errorsstack.pas) is generic stack over array of T which contains errors codes.
 
 ```pascal
 uses
@@ -599,67 +437,47 @@ uses
 
 type
   generic TArrayErrorsStack<T> = class
-  generic TListErrorsStack<T> = class
 ```
 
+  * [Create](https://github.com/isemenkov/pascalutils/wiki/TArrayErrorsStack#create)
+  * [Push](https://github.com/isemenkov/pascalutils/wiki/TArrayErrorsStack#push)
+  * [Pop](https://github.com/isemenkov/pascalutils/wiki/TArrayErrorsStack#pop)
+  * [Count](https://github.com/isemenkov/pascalutils/wiki/TArrayErrorsStack#count)
+  * [Iterate](https://github.com/isemenkov/pascalutils/wiki/TArrayErrorsStack#iterate)
+
+*More details read on* [wiki page](https://github.com/isemenkov/pascalutils/wiki/TArrayErrorsStack).
 
 
-##### Examples
 
-###### Create
+#### TListErrorsStack
+
+[TListErrorsStack](https://github.com/isemenkov/pascalutils/blob/master/source/utils.errorsstack.pas) is generic stack over list of T classes which contains errors codes.
 
 ```pascal
 uses
   utils.errorsstack;
 
 type
-  TStringErrorsStack = {$IFDEF FPC}type specialize{$ENDIF} TArrayErrorsStack<String>;
-
-var
-  errors : TStringErrorsStack;
-
-begin
-  errors := TStringErrorsStack.Create;
-
-  FreeAndNil(errors);
-end;
-
+  generic TListErrorsStack<T> = class
 ```
 
-###### Push
+  * [Create](https://github.com/isemenkov/pascalutils/wiki/TListErrorsStack#create)
+  * [Push](https://github.com/isemenkov/pascalutils/wiki/TListErrorsStack#push)
+  * [Pop](https://github.com/isemenkov/pascalutils/wiki/TListErrorsStack#pop)
+  * [Count](https://github.com/isemenkov/pascalutils/wiki/TListErrorsStack#count)
+  * [Iterate](https://github.com/isemenkov/pascalutils/wiki/TListErrorsStack#iterate)
 
-```pascal
-  { Push error on stack. }
-  errors.Push("Something wrong!");
-```
-
-###### Pop 
-
-```pascal
-  { Pop last error. }
-  writeln(errors.Pop);
-```
-
-###### Iterate
-
-```pascal
-var
-  err : String;
-
-begin
-  for err in errors do
-  begin
-    writeln(err);
-  end;
-```
+*More details read on* [wiki page](https://github.com/isemenkov/pascalutils/wiki/TListErrorsStack).
 
 
 
 ### Iterators
 
-#### TForwardIterator, TBidirectionalIterator
 
-[TForwardIterator](https://github.com/isemenkov/pascalutils/blob/master/source/utils.enumerate.pas) and [TBidirectionalIterator](https://github.com/isemenkov/pascalutils/blob/master/source/utils.enumerate.pas) is a base classes for custom iterators.
+
+#### TForwardIterator
+
+[TForwardIterator](https://github.com/isemenkov/pascalutils/blob/master/source/utils.enumerate.pas) is a base class for custom forward direction iterators.
 
 ```pascal
 uses
@@ -667,41 +485,64 @@ uses
 
 type
   generic TForwardIterator<V, Iterator> = class
+```
+
+  * [HasValue](https://github.com/isemenkov/pascalutils/wiki/TForwardIterator#hasvalue)
+  * [Next](https://github.com/isemenkov/pascalutils/wiki/TForwardIterator#next)
+  * [MoveNext](https://github.com/isemenkov/pascalutils/wiki/TForwardIterator#movenext)
+  * [GetEnumerator](https://github.com/isemenkov/pascalutils/wiki/TForwardIterator#geenumerator)
+  * [GetValue](https://github.com/isemenkov/pascalutils/wiki/TForwardIterator#gevalue)
+  * [GetCurrent](https://github.com/isemenkov/pascalutils/wiki/TForwardIterator#getcurrent)
+
+*More details read on* [wiki page](https://github.com/isemenkov/pascalutils/wiki/TForwardIterator).
+
+
+
+#### TBidirectionalIterator
+
+[TBidirectionalIterator](https://github.com/isemenkov/pascalutils/blob/master/source/utils.enumerate.pas) is a base class for custom forward and backward directions iterators.
+
+```pascal
+uses
+  utils.enumerate;
+
+type
   generic TBidirectionalIterator<V, Iterator> = class
 ```
 
+  * [HasValue](https://github.com/isemenkov/pascalutils/wiki/TBidirectionalIterator#hasvalue)
+  * [Next](https://github.com/isemenkov/pascalutils/wiki/TBidirectionalIterator#next)
+  * [Prev](https://github.com/isemenkov/pascalutils/wiki/TBidirectionalIterator#prev)
+  * [MoveNext](https://github.com/isemenkov/pascalutils/wiki/TBidirectionalIterator#movenext)
+  * [GetEnumerator](https://github.com/isemenkov/pascalutils/wiki/TBidirectionalIterator#geenumerator)
+  * [GetValue](https://github.com/isemenkov/pascalutils/wiki/TBidirectionalIterator#gevalue)
+  * [GetCurrent](https://github.com/isemenkov/pascalutils/wiki/TBidirectionalIterator#getcurrent)
+
+*More details read on* [wiki page](https://github.com/isemenkov/pascalutils/wiki/TBidirectionalIterator).
 
 
-##### Examples
+
+#### TEnumerator
+
+[TEnumerator](https://github.com/isemenkov/pascalutils/blob/master/source/utils.enumerate.pas) class adds counter to an iterable objects what have iterator based on [TForwardIterator](https://github.com/isemenkov/pascalutils/wiki/TForwardIterator) or [TBidirectionalIterator](https://github.com/isemenkov/pascalutils/wiki/TBidirectionalIterator) and returns it (the enumerate object) like in a Python language.
+
 
 ```pascal
 uses
   utils.enumerate;
 
 type
-  TIterator = class; { Fix for FreePascal compiler. }
-  TIterator = class({$IFDEF FPC}specialize{$ENDIF} TForwardIterator<Integer, TIterator>)
-    { ... class methods ... }
-  end;
+  generic TEnumerator<V, Iterator> = class
 ```
 
-```pascal
-uses
-  utils.enumerate;
+  * [Create](https://github.com/isemenkov/pascalutils/wiki/TEnumerator#create)
+  * [Iterate](https://github.com/isemenkov/pascalutils/wiki/TEnumerator#iterate)
 
-type
-  TIterator = class; { Fix for FreePascal compiler. }
-  TIterator = class({$IFDEF FPC}specialize{$ENDIF}     
-    TBidirectionalIterator<Integer, TIterator>)
-    { ... class methods ... }
-  end;
-```
+*More details read on* [wiki page](https://github.com/isemenkov/pascalutils/wiki/TEnumerator).
 
 
 
-#### TEnumerator, TFilterEnumerator
-
-[TEnumerator](https://github.com/isemenkov/pascalutils/blob/master/source/utils.enumerate.pas) class adds counter to an iterable objects what have iterator based on [TForwardIterator](https://github.com/isemenkov/pascalutils/blob/master/source/utils.enumerate.pas) or [TBidirectionalIterator](https://github.com/isemenkov/pascalutils/blob/master/source/utils.enumerate.pas) and returns it (the enumerate object) like in a Python language.
+#### TFilterEnumerator
 
 [TFilterEnumerator](https://github.com/isemenkov/pascalutils/blob/master/source/utils.enumerate.pas) class provides filtering enumerator by UnaryFunctor.
 
@@ -710,69 +551,14 @@ uses
   utils.enumerate, utils.functor;
 
 type
-  generic TEnumerator<V, Iterator> = class
   generic TFilterEnumerator<V, Iterator, Functor> = class
 ```
-Functor is based on [utils.functor.TUnaryFunctor](https://github.com/isemenkov/pascalutils/blob/master/source/utils.functor.pas) interface and used to filtering item value.
+Functor is based on [utils.functor.TUnaryFunctor](https://github.com/isemenkov/pascalutils/wiki/TUnaryFunctor) interface and used to filtering item value.
 
+  * [Create](https://github.com/isemenkov/pascalutils/wiki/TFilterEnumerator#create)
+  * [Iterate](https://github.com/isemenkov/pascalutils/wiki/TFilterEnumerator#iterate)
 
-
-##### Examples
-
-```pascal
-uses
-  utils.enumerate, container.arraylist, utils.functor;
-
-type
-  TIntegerArrayList = {$IFDEF FPC}specialize{$ENDIF} TArrayList<Integer, TCompareFunctorInteger>;
-
-  TArrEnumerator = {$IFDEF FPC}specialize{$ENDIF} TEnumerator<Integer, TIntegerArrayList.TIterator>;
-
-var
-  Arr : TIntegerArrayList;
-  ArrIterator : TArrEnumerator.TIterator;
-  Index, Value : Integer;
-
-begin
-  for ArrIterator in TArrEnumerator.Create(Arr.FirstEntry) do
-  begin
-    Index := ArrIterator.Index;
-    Value := ArrIterator.Value;
-  end;
-end;
-```
-
-```pascal
-uses
-  utils.enumerate, container.arraylist, utils.functor;
-
-type
-  TIntegerArrayList = {$IFDEF FPC}specialize{$ENDIF} TArrayList<Integer, TCompareFunctorInteger>;
-
-  TFilterIntegerOddFunctor = class
-    ({$IFDEF FPC}specialize{$ENDIF} TUnaryFunctor<Integer, Boolean>)
-  public
-    function Call(AValue : Integer) : Boolean; override;
-    begin
-      Result := (AValue mod 2) = 1;
-    end;
-  end;
-
-  TArrOddFilterEnumerator = {$IFDEF FPC}specialize{$ENDIF} TEnumerator<Integer, 
-    TIntegerArrayList.TIterator, TFilterIntegerOddFunctor>;
-
-var
-  Arr : TIntegerArrayList;
-  ArrIterator : TArrOddFilterEnumerator.TIterator;
-  Index, Value : Integer;
-
-begin
-  for ArrIterator in TArrOddFilterEnumerator.Create(Arr.FirstEntry) do
-  begin
-    Value := ArrIterator.Value;
-  end;
-end;
-```
+*More details read on* [wiki page](https://github.com/isemenkov/pascalutils/wiki/TFilterEnumerator).
 
 
 
@@ -787,24 +573,14 @@ uses
 type
   generic TAccumulate<V, Iterator, Functor> = class
 ```
-Functor is based on [utils.functor.TUnaryFunctor](https://github.com/isemenkov/pascalutils/blob/master/source/utils.functor.pas) interface and used to accumulate the result value.
+Functor is based on [utils.functor.TBinaryFunctor](https://github.com/isemenkov/pascalutils/wiki/TBinaryFunctor) interface and used to accumulate the result value.
 
+  * [Create](https://github.com/isemenkov/pascalutils/wiki/TAccumulate#create)
+  * [Value](https://github.com/isemenkov/pascalutils/wiki/TAccumulate#value)
+  * [Default addition functors](https://github.com/isemenkov/pascalutils/wiki/TAccumulate#default-addition-functors)
+  * [Default multiplication functors](https://github.com/isemenkov/pascalutils/wiki/TAccumulate#default-multiplication-functors)
 
-
-```pascal
-uses
-  container.arraylist, utils.functor, utils.functional;
-
-type
-  TIntegerArrayList = {$IFDEF FPC}specialize{$ENDIF} TArrayList<Integer,    
-    TCompareFunctorInteger>;
-  TIntegerAdditionalAccumalate = {$IFDEF FPC}specialize{$ENDIF} 
-    TAccumulate<Integer, TIntegerArrayList.TIterator, TAdditionIntegerFunctor>;
-
-begin
-  writeln(TIntegerAdditionalAccumalate.Create(arr.FirstEntry, 0).Value);
-end;
-```
+*More details read on* [wiki page](https://github.com/isemenkov/pascalutils/wiki/TAccumulate).
 
 
 
@@ -819,37 +595,9 @@ uses
 type
   generic TMap<V, Iterator, Functor> = class
 ```
-Functor is based on [utils.functor.TUnaryFunctor](https://github.com/isemenkov/pascalutils/blob/master/source/utils.functor.pas) interface and used to modify item value.
+Functor is based on [utils.functor.TUnaryFunctor](https://github.com/isemenkov/pascalutils/wiki/TUnaryFunctor) interface and used to modify item value.
 
+  * [Create](https://github.com/isemenkov/pascalutils/wiki/TMap#create)
+  * [Iterate](https://github.com/isemenkov/pascalutils/wiki/TMap#iterate)
 
-```pascal
-uses
-  container.arraylist, utils.functor, utils.functional;
-
-type
-  TIntegerArrayList = {$IFDEF FPC}specialize{$ENDIF} TArrayList<Integer,    
-    TCompareFunctorInteger>;
-
-  TIntegerPow2Functor = class
-    ({$IFDEF FPC}specialize{$ENDIF} TUnaryFunctor<Integer, Integer>)
-  public
-    function Call (AValue : Integer) : Integer;
-    begin
-      Result := AValue * AValue;
-    end;
-  end;
-
-  TIntegerArrayListMap = {$IFDEF FPC}specialize{$ENDIF} 
-    TMap<Integer, TIntegerArrayList.TIterator, TIntegerPow2Functor>;
-
-var
-  arr : TIntegerArrayList;
-  iter : TIntegerArrayListMap.TIterator;
-begin
-  arr := TIntegerArrayList.Create;
-
-  for iter in TIntegerArrayListMap.Create(arr.FirstEntry, 
-    TIntegerPow2Functor.Create) do
-    writeln(iter.Value);
-end;
-```
+*More details read on* [wiki page](https://github.com/isemenkov/pascalutils/wiki/TMap).
